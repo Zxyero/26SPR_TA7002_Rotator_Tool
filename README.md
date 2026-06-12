@@ -16,7 +16,7 @@ Helpful tool when building large enviroments and creating variation in scenes qu
 - In Unreal go to plugins -> Python Editor Script Plugin -> select on -> restart editor
 - Go to Tools menu bar -> select 'Exacute Python Script', locate and select 'Rotate_test_5'
 
-- to run this script again, select 'Recent Python Scripts' in Unreal Engine Tool bar, and select 'Rotate_tes_5' (note to self update file name)
+- To run this script again, select 'Recent Python Scripts' in Unreal Engine Tool bar, and select 'Rotate_tes_5' (note to self update file name)
 
 
 # Set-up requirements :
@@ -27,5 +27,5 @@ Helpful tool when building large enviroments and creating variation in scenes qu
 # Known bugs and workarounds :
 - Undo (Ctrl-Z) doesnt apply to rotation changes made with tool, can undo random rotation changes by following 'clear rotation' instruction below.
 
-- can repeat a new randomised rotation by re-applying the 'apply change to selected' button
-- **clear rotation** (returns to actors original applied  rotation) by unchecking all checkboxes and selecting the 'apply change to selected' button = clear rotation.
+- Can repeat a new randomised rotation by re-applying the 'apply change to selected' button
+- **Clear Rotation** (returns to actors original applied  rotation) by unchecking all checkboxes and selecting the 'apply change to selected' button = clear rotation.
