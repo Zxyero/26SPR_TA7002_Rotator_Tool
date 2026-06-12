@@ -21,7 +21,8 @@ Helpful tool when building large enviroments and creating variation in scenes qu
 
 # Set-up requirements :
 - Unreal Engine 5
-- pySide6 (?)
+- pySide6
+- pySide6 is installed in Unreal Engine command line, to install pySide6 type (& "path\to\your\unreal\python\executable.exe" -m pip install pyside6), referencing the path unreal engine is installed on your computer (<YOUR UE INSTALL DIR>\UE_5.6\Engine\Binaries\ThirdParty\Python3\Win64\)
 
   
 # Known bugs and workarounds :
