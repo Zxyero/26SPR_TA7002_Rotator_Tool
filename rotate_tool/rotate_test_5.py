@@ -1,7 +1,8 @@
 import unreal
 import random
-import sys, os
-#from systems_ue_r import QApplication, QWidget, QLabel, QDoubleSpinBox, QCheckBox, QPushButton, QStyle, QSize, QColor,QPalette, QVBoxLayout, EAS, QMainWindow, selected_actors
+import sys
+
+
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
@@ -10,29 +11,31 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox, 
     QCheckBox, 
     QPushButton,
-    QStyle,
-    QFrame
+    QFrame,
     
 )
 from PySide6.QtCore import QSize
-from PySide6.QtGui import QPalette, QColor
-
-
-
+from PySide6.QtGui import QKeySequence
 WINDOW_NAME = "RandomRotationTool"
 WINDOW = None
 
-#todo:
-#bug, when deselect mesh and selects new mesh - still affects old unselected mesh == fixed -> put eas into def for rotate apply
+
+
 
 class RotationTool(QWidget):
     def __init__(self):
-        super(RotationTool, self).__init__()
-
+        super().__init__()
+        self.original_rotations = {} #stores original rotation of selected actor for later
         self.setObjectName(WINDOW_NAME)
         self.setWindowTitle("Random Rotation Tool")
         self.setMinimumSize(QSize(300,512))
+
+        ## widget UI design
         layout = QVBoxLayout(self)
+        self.myframe = QFrame()
+        self.myframe.setFrameShape(QFrame.StyledPanel)
+        self.myframe.setFrameShadow(QFrame.Plain)
+        self.myframe.setLineWidth(3)
         self.tool_style()
 
 
@@ -49,11 +52,11 @@ class RotationTool(QWidget):
         self.max_roll = self.make_spin(-360, 360, 10)
 
 #####            apply change button
-        self.use_roll = QCheckBox("Randomize yaw")
+        self.use_roll = QCheckBox("Randomize Yaw")
 
-        self.use_yaw = QCheckBox("Randomize pitch")
+        self.use_yaw = QCheckBox("Randomize Pitch")
         
-        self.use_pitch = QCheckBox("Randomize roll")
+        self.use_pitch = QCheckBox("Randomize Roll")
         
         
 
@@ -75,14 +78,22 @@ class RotationTool(QWidget):
         layout.addWidget(self.use_yaw)
         layout.addWidget(self.use_roll)
 
-### btn_A = button apply
 
-        btn_A = QPushButton("Apply Rotation Change to Selected")
-        btn_A.clicked.connect(self.apply_rotation)
-        layout.addWidget(btn_A)
+### btn_E = button enter
 
+        btn_E = QPushButton("Apply Rotation Change to Selected")
+        btn_E.setShortcut(QKeySequence("Ctrl+E"))
+        btn_E.clicked.connect(self.apply_rotation)
+        layout.addWidget(btn_E)
 
+### btn_C = button clear rotation
 
+        btn_C = QPushButton("Clear All Random Rotations")
+        btn_C.setShortcut(QKeySequence("Ctrl+C"))
+        btn_C.clicked.connect(self.clear_rotation)
+        layout.addWidget(btn_C)
+
+        ### Spinbox values
     def make_spin(self, mn, mx, val):
         snxv = QDoubleSpinBox()
         snxv.setRange(mn, mx)
@@ -93,34 +104,47 @@ class RotationTool(QWidget):
     #(snxv = "self, min max value")
 
 
-#### match Slate unreal styles, colour corordination fpr reg green blue xyz axis.
+#### match Slate Unreal Engine styles
     def tool_style(self):
         self.setStyleSheet("""
             QWidget {
-                background-color: #262626;
-                color: #67abeb;
+                background-color: #242424;
+                color: #0f0f0f;
                 font-family: Roboto;
                 font-size: 14px;
             }
             QLabel {
-                color: #67abeb;
+                color: #f5f5f5;
                 font-family: Roboto;
                 font-size: 14px;
             }
             QCheckBox {
+                color: #f5f5f5;
                 spacing: 8px;
-                padding: 3px;
-            }
+                padding: 4px;
+            }      
             QDoubleSpinBox {
                 background-color: #010103;
-                color: #67abeb;
+                color: #f5f5f5;
                 border: 1px solid #444;
-                padding: 4px;
+                padding: 10px;
                 min-height: 22px;
+            }
+            QDoubleSpinBox::up-button {
+                subcontrol-origin: border;
+                subcontrol-position: top right;
+                width: 18px;
+                padding: 4px;
+            }
+            QDoubleSpinBox::down-button {
+                subcontrol-origin: border;
+                subcontrol-position: bottom right;
+                width: 18px;
+                padding: 4px;
             }
             QPushButton {
                 background-color: #3d3d3d;
-                color: #67abeb;
+                color: #f5f5f5;
                 border: 1px solid #555;
                 padding: 8px;
                 border-radius: 4px;
@@ -130,6 +154,7 @@ class RotationTool(QWidget):
             }
         """)
 
+                ## Rotation Logic
     def apply_rotation(self):
         EAS = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
         selected_actors = EAS.get_selected_level_actors()        
@@ -143,7 +168,12 @@ class RotationTool(QWidget):
         min_yaw, max_yaw = sorted((self.min_yaw.value(), self.max_yaw.value()))
         min_roll, max_roll = sorted((self.min_roll.value(), self.max_roll.value()))
 
+
+         ##get actor original rotation , allows for returning the actor to it's original rotational value set in unreal before randomisation
         for actor in selected_actors:
+            if actor not in self.original_rotations:
+                self.original_rotations[actor] = actor.get_actor_rotation()
+
             pitch = base_pitch
             yaw = base_yaw
             roll = base_roll
@@ -163,26 +193,40 @@ class RotationTool(QWidget):
             actor.set_actor_rotation(unreal.Rotator(pitch, yaw, roll), False)
 
 
+            ## Rotation Clear logic 
+    def clear_rotation(self):
+
+        #rot = rotation. stored from selected actors and listed. clear = return to original value.
+
+        for actor, rot in list(self.original_rotations.items()):
+            if actor:
+                actor.set_actor_rotation(rot, False)
+        self.original_rotations.clear()
+
 
 def launch():
     app = QApplication.instance()
 
     if app is None:
         app = QApplication(sys.argv)
-    
-    for widget in app.allWindows():
-        if widget.objectName() == WINDOW_NAME:
-            widget.close()
 
-    return app
+    for win in (QApplication.allWindows()):
+        if win.objectName() == WINDOW_NAME:
+            win.close()
+            win.deleteLater()
 
-WINDOW = RotationTool()
-WINDOW.show()
-
-#------------------------> sits on UE instead of closing
-unreal.parent_external_window_to_slate(
+    global WINDOW
+    WINDOW = RotationTool()
+    WINDOW.show()
+    #------------------------> sits on UE instead of closing
+    unreal.parent_external_window_to_slate(
     WINDOW.winId(),
     unreal.SlateParentWindowSearchMethod.MAIN_WINDOW
-)
+    )
+
+    return WINDOW
+
+
 
 launch()
+
